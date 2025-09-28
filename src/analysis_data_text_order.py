@@ -315,10 +315,15 @@ def parse_and_sort_data(chart_obj):
 def analysis_data_text(api_key, user_input, conversation_uid, chart_obj):
     # 使用配置文件中的设置
     base_url = MODEL_CONFIG['base_url']
-    # 对于阿里云API，base_url已经包含了路径，不需要再添加/v1/chat/completions
+    # 处理不同API的URL格式
     if 'dashscope.aliyuncs.com' in base_url:
+        # 阿里云API，base_url已经包含了路径
+        url = f"{base_url}/chat/completions"
+    elif base_url.endswith('/v1'):
+        # base_url已经包含/v1路径，直接添加endpoint
         url = f"{base_url}/chat/completions"
     else:
+        # 需要添加完整路径
         url = f"{base_url}/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -342,7 +347,7 @@ def analysis_data_text(api_key, user_input, conversation_uid, chart_obj):
     chart_json = json.dumps(chart_obj, ensure_ascii=False)
     prompt = f"""请对以下数据进行专业深度分析，要求：
 1. 直接给出分析结论，不要包含思考过程
-2. 使用规范的格式，包括标题、要点
+2. 严格以【优质分析样例】格式输出，不要输出标题，仅输出分项总结、要点
 3. 语言简洁明了，重点突出，注意标点符号
 4. 只输出主要结论，不超过300字
 5. 有些显而易见的内容没必要说，比如各市拍照收入占比均超过90%
@@ -351,13 +356,13 @@ def analysis_data_text(api_key, user_input, conversation_uid, chart_obj):
 
 【关键分析原则】
 1. 所有结论必须基于【准确的排序结果】，严禁自行推测或计算
-2. 提及"唯一"、"最大"、"最小"等极值时，必须先核对排序结果确保准确
+2. 提及"唯一"、"最大"、"最小"、"最低"、"最高"等极值时，必须先核对排序结果确保准确
 3. 描述正负增长地市数量时，必须参考统计信息，不可估算
 4. 比较不同地市时，必须按照排序结果中的实际顺序
 5. 禁止使用"除...外"的表述，除非确认所有例外情况
 6. 针对分层统计数据，避免逐项列举各层级的最值，应进行整体趋势分析和结构性洞察，重点关注分布特征、异常值和业务含义
 7. 避免简单罗列地市名称，应进行深度分析：结合全省均值进行对比，识别整体趋势和异常情况，重点关注业务含义和改进建议，形成有价值的洞察结论
-
+8. 两级分化的结论一定要严格参考排序结果，不可自行推测
 
 【数据验证要求】
 - 声称某地市"唯一"时，必须确认排序结果中确实只有该地市满足条件
@@ -377,6 +382,7 @@ XX收入下降幅度较大：XX全球通客户收入环比下降 XX%，是降幅
 多数地市融合率接近均值：除铁岭、葫芦岛外，其余地市固移融合率均在62%以上，整体差距不大，但提升空间仍存。
 
 【严格禁止事项】
+- 禁止以markdown格式输出
 - 禁止重复表达相同观点
 - 禁止输出任何思考过程、<think>标签、分析推理步骤或中间计算过程
 - 分析报告文字中禁止带有空格
@@ -385,14 +391,6 @@ XX收入下降幅度较大：XX全球通客户收入环比下降 XX%，是降幅
 - 禁止忽略排序结果中的统计信息
 - 禁止对变化量数据进行不准确的概括
 
-【严格禁止事项】
-- 禁止重复表达相同观点
-- 禁止输出任何思考过程、<think>标签、分析推理步骤或中间计算过程
-- 分析报告文字中禁止带有空格
-- 禁止在同一份报告中出现逻辑矛盾的结论
-- 禁止使用模糊或相互冲突的形容词描述同一现象
-- 禁止忽略排序结果中的统计信息
-- 禁止对变化量数据进行不准确的概括
 
 【准确的排序结果】（请按照以下排序结果进行分析，确保准确性）：
 {sort_results}
@@ -403,7 +401,7 @@ XX收入下降幅度较大：XX全球通客户收入环比下降 XX%，是降幅
 请按照上述排序结果进行分析，不要自行排序。
 
 【最后检查】在输出分析结论前，请严格核对：
-1. 所说的"最高"地市是否确实是排序第一位？
+1. 所说的"最高","最低"地市是否确实是排序第一位？
 2. 所说的"高于"、"超过"是否数值确实更大？
 3. 所有排名表述是否与排序结果完全一致？
 4. 是否错误地将各地市占比相加（绝对禁止！）？
@@ -418,7 +416,7 @@ XX收入下降幅度较大：XX全球通客户收入环比下降 XX%，是降幅
     payload = {
         "model": MODEL_CONFIG['llm_model'],
         "messages": [
-            {"role": "system", "content": "你是中国移动的专业数据分析师。严格要求：1)所有均值和统计数据必须使用提供的【准确统计信息】，禁止自行计算 2)所有排名必须基于排序结果，禁止编造 3)绝对禁止将各地市占比相加或说合计占比 4)禁止混淆不同指标概念 5)严格区分地市均值和全省数据，引用时必须准确 6)禁止捏造任何数字 7)同一地市只能有一个数值，不得出现矛盾数据 8)垫底地市不能说成前3名 9)直接给出最终结论，禁止输出思考过程"},
+            {"role": "system", "content": "你是中国移动的专业数据分析师。严格要求：1)所有均值和统计数据必须使用提供的【准确统计信息】，禁止自行计算 2)所有排名必须基于排序结果，禁止编造 3)绝对禁止将各地市占比相加或说合计占比 4)禁止混淆不同指标概念 5)严格区分地市均值和全省数据，引用时必须准确 6)禁止捏造任何数字 7)同一地市只能有一个数值，不得出现矛盾数据  8)直接给出最终结论，禁止输出思考过程"},
             {"role": "user", "content": prompt}
         ],
         "temperature": MODEL_CONFIG.get('temperature', 0.3)
@@ -444,39 +442,23 @@ XX收入下降幅度较大：XX全球通客户收入环比下降 XX%，是降幅
             if content and content.strip():  # 检查返回内容是否有效
                 return content
             else:
-                # 内容为空，输出调试信息
-                print("API返回内容为空，调试信息：")
-                print(f"请求URL: {url}")
-                print(f"请求头: {headers}")
-                print(f"请求负载: {json.dumps(payload, ensure_ascii=False, indent=2)}")
-                print(f"响应状态码: {response.status_code}")
-                print(f"响应内容: {json.dumps(result, ensure_ascii=False, indent=2)}")
+                # 内容为空，简化输出
+                print("⚠️ API返回内容为空")
                 return None
         return result
     except requests.exceptions.RequestException as e:
-        # 输出调试信息
-        print(f"API请求异常: {e}")
-        print(f"异常类型: {type(e).__name__}")
-        print(f"请求URL: {url}")
-        print(f"请求头: {headers}")
-        print(f"请求负载: {json.dumps(payload, ensure_ascii=False, indent=2)}")
+        # 简化错误输出
+        print(f"❌ API请求失败: {type(e).__name__}")
         if hasattr(e, 'response') and e.response is not None:
-            print(f"错误响应状态码: {e.response.status_code}")
-            print(f"错误响应内容: {e.response.text}")
+            print(f"错误状态码: {e.response.status_code}")
         return None
     except json.JSONDecodeError as e:
-        # 输出调试信息
-        print(f"JSON解析错误: {e}")
-        print(f"请求URL: {url}")
-        print(f"响应文本: {response.text}")
+        # 简化错误输出
+        print(f"❌ JSON解析错误: {str(e)[:100]}")
         return None
     except Exception as e:
-        # 输出调试信息
-        print(f"其他异常: {e}")
-        print(f"异常类型: {type(e).__name__}")
-        print(f"请求URL: {url}")
-        import traceback
-        traceback.print_exc()
+        # 简化错误输出
+        print(f"❌ API调用异常: {type(e).__name__}: {str(e)[:100]}")
         return None
 
 def analysis_data_text_test(api_key, user_input, conversation_uid, chart_obj):
@@ -545,29 +527,18 @@ def analysis_data_text_test(api_key, user_input, conversation_uid, chart_obj):
                 return None
         return result
     except requests.exceptions.RequestException as e:
-        # 输出调试信息
-        print(f"API请求异常: {e}")
-        print(f"异常类型: {type(e).__name__}")
-        print(f"请求URL: {url}")
-        print(f"请求头: {headers}")
-        print(f"请求负载: {json.dumps(payload, ensure_ascii=False, indent=2)}")
+        # 简化错误输出
+        print(f"❌ API请求失败: {type(e).__name__}")
         if hasattr(e, 'response') and e.response is not None:
-            print(f"错误响应状态码: {e.response.status_code}")
-            print(f"错误响应内容: {e.response.text}")
+            print(f"错误状态码: {e.response.status_code}")
         return None
     except json.JSONDecodeError as e:
-        # 输出调试信息
-        print(f"JSON解析错误: {e}")
-        print(f"请求URL: {url}")
-        print(f"响应文本: {response.text}")
+        # 简化错误输出
+        print(f"❌ JSON解析错误: {str(e)[:100]}")
         return None
     except Exception as e:
-        # 输出调试信息
-        print(f"其他异常: {e}")
-        print(f"异常类型: {type(e).__name__}")
-        print(f"请求URL: {url}")
-        import traceback
-        traceback.print_exc()
+        # 简化错误输出
+        print(f"❌ API调用异常: {type(e).__name__}: {str(e)[:100]}")
         return None
 
 # 使用示例

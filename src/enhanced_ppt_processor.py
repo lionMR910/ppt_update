@@ -179,7 +179,7 @@ class EnhancedPPTProcessor(PPTProcessor):
     
     def _replace_text_in_runs(self, text_frame) -> int:
         """
-        在文本运行块中进行精确替换，完全保持原有格式
+        在文本运行块中进行精确替换，处理跨运行块的占位符
         
         Args:
             text_frame: PPT文本框架
@@ -192,30 +192,139 @@ class EnhancedPPTProcessor(PPTProcessor):
         try:
             # 遍历所有段落
             for paragraph in text_frame.paragraphs:
-                # 遍历每个段落中的运行块
+                # 收集段落中所有文本和运行块信息
+                full_text = ""
+                run_info = []  # [(start_pos, end_pos, run_obj), ...]
+                
                 for run in paragraph.runs:
-                    if run.text:
-                        original_text = run.text
-                        new_text = original_text
-                        run_replacements = 0
-                        
-                        # 在当前运行块中进行KPI替换
-                        for placeholder, value in self.kpi_replacement_data.items():
-                            if placeholder in new_text:
-                                new_text = new_text.replace(placeholder, value)
-                                run_replacements += 1
-                                self.logger.debug(f"在运行块中替换: {placeholder} -> {value}")
-                        
-                        # 如果有替换，更新运行块文本（保持所有格式属性）
-                        if run_replacements > 0:
-                            run.text = new_text
-                            total_replacements += run_replacements
-                            self.logger.debug(f"运行块替换完成: {run_replacements} 个占位符，格式完全保持")
+                    start_pos = len(full_text)
+                    run_text = run.text if run.text else ""
+                    full_text += run_text
+                    end_pos = len(full_text)
+                    run_info.append((start_pos, end_pos, run))
+                
+                if not full_text:
+                    continue
+                
+                # 在完整文本中查找和替换占位符
+                modified_text = full_text
+                paragraph_replacements = 0
+                
+                for placeholder, value in self.kpi_replacement_data.items():
+                    if placeholder in modified_text:
+                        old_count = modified_text.count(placeholder)
+                        modified_text = modified_text.replace(placeholder, str(value))
+                        new_count = modified_text.count(placeholder)
+                        replacements_made = old_count - new_count
+                        paragraph_replacements += replacements_made
+                        self.logger.info(f"在段落中替换: {placeholder} -> {value} (替换了{replacements_made}次)")
+                
+                # 如果有替换，重新构建段落的运行块
+                if paragraph_replacements > 0:
+                    self._reconstruct_paragraph_runs(paragraph, modified_text, run_info)
+                    total_replacements += paragraph_replacements
+                else:
+                    # 检查单个运行块中的替换（向后兼容）
+                    for run in paragraph.runs:
+                        if run.text:
+                            original_text = run.text
+                            new_text = original_text
+                            run_replacements = 0
+                            
+                            for placeholder, value in self.kpi_replacement_data.items():
+                                if placeholder in new_text:
+                                    old_count = new_text.count(placeholder)
+                                    new_text = new_text.replace(placeholder, str(value))
+                                    new_count = new_text.count(placeholder)
+                                    run_replacements += (old_count - new_count)
+                            
+                            if run_replacements > 0:
+                                run.text = new_text
+                                total_replacements += run_replacements
+                                self.logger.debug(f"单个运行块替换: {run_replacements} 个占位符")
                             
         except Exception as e:
             self.logger.error(f"运行块替换失败: {e}")
             
         return total_replacements
+    
+    def _reconstruct_paragraph_runs(self, paragraph, new_text: str, original_run_info: list):
+        """
+        根据新文本重新构建段落的运行块，尽量保持格式
+        
+        Args:
+            paragraph: PPT段落对象
+            new_text: 新的文本内容
+            original_run_info: 原始运行块信息 [(start_pos, end_pos, run_obj), ...]
+        """
+        try:
+            # 保存第一个运行块的格式
+            original_format = None
+            if original_run_info and len(original_run_info) > 0:
+                first_run = original_run_info[0][2]
+                original_format = self._extract_run_format(first_run)
+            
+            # 清空现有运行块
+            paragraph.clear()
+            
+            # 创建新的运行块
+            if new_text:
+                new_run = paragraph.add_run()
+                new_run.text = new_text
+                
+                # 应用原始格式
+                if original_format:
+                    self._apply_run_format(new_run, original_format)
+                    
+        except Exception as e:
+            self.logger.error(f"重构段落运行块失败: {e}")
+    
+    def _extract_run_format(self, run):
+        """
+        提取运行块的格式信息
+        
+        Args:
+            run: 原始运行块
+            
+        Returns:
+            格式信息字典
+        """
+        try:
+            return {
+                'font_name': getattr(run.font, 'name', None),
+                'font_size': getattr(run.font, 'size', None),
+                'bold': getattr(run.font, 'bold', None),
+                'italic': getattr(run.font, 'italic', None),
+                'underline': getattr(run.font, 'underline', None),
+                'color': getattr(run.font.color, 'rgb', None) if hasattr(run.font, 'color') else None
+            }
+        except Exception as e:
+            self.logger.debug(f"提取格式信息失败: {e}")
+            return {}
+    
+    def _apply_run_format(self, run, format_info: dict):
+        """
+        应用格式信息到运行块
+        
+        Args:
+            run: 目标运行块
+            format_info: 格式信息字典
+        """
+        try:
+            if format_info.get('font_name'):
+                run.font.name = format_info['font_name']
+            if format_info.get('font_size'):
+                run.font.size = format_info['font_size']
+            if format_info.get('bold') is not None:
+                run.font.bold = format_info['bold']
+            if format_info.get('italic') is not None:
+                run.font.italic = format_info['italic']
+            if format_info.get('underline') is not None:
+                run.font.underline = format_info['underline']
+            if format_info.get('color'):
+                run.font.color.rgb = format_info['color']
+        except Exception as e:
+            self.logger.debug(f"应用格式失败: {e}")
     
     def _replace_text_with_format(self, shape, new_text: str) -> bool:
         """

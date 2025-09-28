@@ -1,31 +1,73 @@
-/corrected_output.pptx
-/debug_data_isolation.py
-/debug_kpi_data.py
-/demo_output.pptx
-/environment.yml
-/envs
-/example_kpi_usage.py
-/file
-/fixed_output.pptx
-/formatted_output.pptx
-/KPI_FEATURE_GUIDE.md
-/kpi_ppt_log_20250901.log
-/kpi_ppt_log_20250902.log
-/kpi_ppt_log_20250907.log
-/kpi_ppt_log_20250908.log
-/MODEL_CONFIG_GUIDE.md
-/pr.md
-/prd.md
-/prd_detail.md
-/prd_optimized.md
-/prd_simple.md
-/README_simple.md
-/report_202506.pptx
-/requirements_kpi.txt
-/simple_kpi_test.py
-/src.rar
-/test_format.py
-/test_format_preserve.py
-/test_output.pptx
-/test_ppt_replacer.py
-/__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+envs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Output files
+*.pptx
+!template*.pptx
+!model*.pptx
+
+# Excel files
+*.xlsx
+*.xls
+
+# Archive files
+*.rar
+*.zip
+*.tar.gz
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Database
+*.db
+*.sqlite3
+
+# Config files with sensitive data
+config_local.py
+.env.local

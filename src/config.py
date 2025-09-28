@@ -42,21 +42,34 @@ MODEL_CONFIG = {
     "temperature": 0.1  # 降低温度减少幻觉
 }
 """
-
-# 阿里云通义千问3-max-preview配置（网络问题暂时注释）
 """
+# DeepSeek-R1-0528模型配置
 MODEL_CONFIG = {
-    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    "llm_model": "qwen-max-preview",  # 使用qwen3-max-preview
+    "base_url": "http://10.68.96.30:21123/v1",
+    "llm_model": "DeepSeek-R1-0528",
     "timeout": 120,
     "max_retries": 3,
-    "api_key": "sk-3739d12ced0a41b4b12881f2e7fc1209",  # 阿里云API密钥
-    "temperature": 0.1,  # 降低温度减少幻觉
+    "api_key": "sk-rAylky7cWxmll3oyE2B366E1A278436e97A403D0106375A8",  # DeepSeek API密钥
+    "temperature": 0.3,  # 降低温度减少幻觉
     "enable_thinking": False  # 禁用思考过程输出
 }
 """
+# 阿里云通义千问3-max-preview配置（已注释）
+
+MODEL_CONFIG = {
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "llm_model": "qwen3-235b-a22b-instruct-2507",  # 使用qwen3-235b-a22b-instruct-2507 qwen3-235b-a22b-thinking-2507
+    "timeout": 120,
+    "max_retries": 3,
+    "api_key": "sk-3739d12ced0a41b4b12881f2e7fc1209",  # 阿里云API密钥
+    "temperature": 0.3,  # 降低温度减少幻觉
+    "enable_thinking": False  # 禁用思考过程输出
+}
+
+
 
 # 当前使用配置（已优化的短期方案）
+"""
 MODEL_CONFIG = {
     "base_url": "http://10.68.130.11:3001",
     "llm_model": "qwen3-32b",
@@ -65,7 +78,7 @@ MODEL_CONFIG = {
     "api_key": "sk-XIval4xD5HWrvG7956C534B6Cd7348C2B22dFc22B1Ca308e",  # 专业分析API密钥
     "temperature": 0.3  # 调整温度平衡准确性和创造性
 }
-
+"""
 # PPT格式配置
 FORMAT_CONFIG = {
     "font_name": "微软雅黑",
@@ -123,6 +136,14 @@ FILE_CONFIG = {
 REPLACEMENT_DATA = {
     "{{analysis_text1}}": "数据分析报告内容1：这里是第一部分的分析内容，包括主要发现和结论。",
     "{{analysis_text2}}": "数据分析报告内容2：这里是第二部分的分析内容，包括详细的数据解读和建议。"
+}
+
+# 分析验证配置
+VERIFICATION_CONFIG = {
+    "enable_verification": True,  # 是否启用分析结论验证和修正
+    "enable_ai_correction": True, # 是否启用AI修正（如果为False，只检测问题不修正）
+    "verification_timeout": 30,   # 验证超时时间（秒）
+    "max_correction_attempts": 1  # 最大修正尝试次数
 }
 
 # 其他配置

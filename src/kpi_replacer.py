@@ -154,23 +154,25 @@ class KpiReplacer:
         # 替换月份参数
         # 根据实际的SQL模板格式进行调整
         # 处理各种可能的占位符格式
-        sql = sql.replace('{op_month}', f"'{current_month}'")
-        sql = sql.replace('{last_op_month}', f"'{last_month_str}'")
-        sql = sql.replace('{last_month}', f"'{last_month_str}'")
+        # 注意：这里只替换占位符本身，不添加引号，因为模板中可能已经包含引号
+        sql = sql.replace('{op_month}', current_month)
+        sql = sql.replace('{last_op_month}', last_month_str)
+        sql = sql.replace('{last_month}', last_month_str)
         
-        # 处理双引号格式的占位符（从日志中看到的格式）
-        sql = sql.replace("''202507''", f"'{current_month}'")
-        sql = sql.replace("''202506''", f"'{last_month_str}'")
+        # 移除错误的硬编码替换逻辑
+        # 原来的错误代码：
+        # sql = sql.replace("''202507''", f"'{current_month}'")  # 这是错误的！
+        # sql = sql.replace("''202506''", f"'{last_month_str}'")  # 这是错误的！
         
         # 处理其他可能的月份占位符格式
         import re
-        # 替换所有双引号包围的6位数字（可能是月份）
-        sql = re.sub(r"''(\d{6})''", lambda m: f"'{m.group(1)}'", sql)
+        # 注意：移除了硬编码的月份替换，避免错误替换
         
         # 处理表名中的月份后缀，如 anaylsis_qqt_lzgx_st_mm
         # 这里需要根据实际的表名规则进行调整
         
         self.logger.debug(f"月份参数替换完成: 当前月份={current_month}, 上个月份={last_month_str}")
+        self.logger.debug(f"替换后的SQL预览: {sql[:200]}...")
         return sql
     
     def execute_sql_query(self, sql: str) -> List[Dict]:

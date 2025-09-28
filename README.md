@@ -2,6 +2,84 @@
 
 一个自动化工具，用于替换PPT模板中的占位符文本，支持静态文本替换和动态KPI数据替换。
 
+### 使用方法
+
+#### 1. PPT生成模式
+```bash
+# 激活虚拟环境
+conda activate envs/pptup_env
+# 生成完整PPT报告（默认全球通分析）
+python src/ppt_generator.py -t file/model.pptx -o file/ppt_report_202507.pptx -m 202507
+
+# 指定特定分析任务
+python src/ppt_generator.py -t file/model.pptx -o file/ppt_report_202507.pptx -m 202507 --sql-id 5
+
+# 使用中高端分析配置
+python src/ppt_generator.py -t file/zgd/zgd_model.pptx -o file/zgd/ppt_zgd_report_202508.pptx -m 202508 -a 2 --sql-id 1
+# 使用全球通分析配置
+python src/ppt_generator.py -t file/qqt/qqt_model.pptx -o file/qqt/ppt_qqt_report_202508.pptx -m 202508 -a 1 --sql-id 1
+# 使用全量客户分析配置
+python src/ppt_generator.py -t file/zwkh/zwkh_model.pptx -o file/zwkh/ppt_zwkh_report_202508.pptx -m 202508 -a 3 --sql-id 1
+
+# 指定多个任务
+python src/ppt_generator.py -t file/zgd/zgd_model.pptx -o file/ppt_report_202507_add.pptx -m 202507 --sql-id 1 13 18 19 -a 2
+```
+
+#### 示例1：基本KPI替换
+```bash
+
+# 基本KPI替换（202507月份数据）
+python src/kpi_ppt_command.py -t file/model.pptx -m 202507
+
+# 输出：file/model_kpi_updated_20241229_123456.pptx
+```
+
+#### 示例2：详细模式KPI替换
+```bash
+# 详细模式，查看完整处理过程 -a 2 中高端分析
+python src/kpi_ppt_command.py -t file/zgd/ppt_zgd_report_202508.pptx -m 202508 -v -a 2 --sql-id 1 2 3
+# 详细模式，查看完整处理过程 -a 1 全球通分析
+python src/kpi_ppt_command.py -t file/qqt/ppt_qqt_report_202508.pptx -m 202508 -v -a 1 --sql-id 1 2 3
+
+# 显示数据库查询、SQL执行、数据替换等详细信息
+
+# 使用中高端分析配置处理所有KPI
+python src/kpi_ppt_command.py -t file/zgd/ppt_zgd_report_202507.pptx -m 202507 -a 2
+python src/kpi_ppt_command.py -t file/zgd/zgd_model.pptx -m 202508 -a 2
+
+# 使用全球通分析配置
+python src/kpi_ppt_command.py -t file/qqt/ppt_qqt_report_202507.pptx -m 202507 -a 1
+python src/kpi_ppt_command.py -t file/qqt/qqt_model.pptx -m 202508 -a 1
+
+# 使用全量客户分析配置
+python src/kpi_ppt_command.py -t file/zwkh/ppt_zwkh_report_202507.pptx -m 202507 -a 3
+python src/kpi_ppt_command.py -t file/zwkh/zwkh_model.pptx -m 202508 -a 3
+
+# 指定特定的SQL ID
+python src/kpi_ppt_command.py -t file/zgd/ppt_report_202507.pptx -m 202507 -a 2 --sql-id 1 2 3
+```
+
+
+#### 2. SQL执行模式
+```bash
+# 处理分析任务的SQL并执行
+python src/ppt_generator.py -t file/model.pptx -m 202507 --sql-id 5 --execute
+
+# 处理自定义SQL模板并执行
+python src/ppt_generator.py -t file/model.pptx -m 202507 -s "SELECT * FROM table WHERE month = {op_month}" --execute
+
+# 从文件读取SQL模板并执行
+python src/ppt_generator.py -t file/model.pptx -m 202507 -f sql_template.sql --execute
+```
+
+#### 3. SQL预览模式
+```bash
+# 只显示处理后的SQL，不执行
+python src/ppt_generator.py -t file/model.pptx -m 202507 -s "SELECT * FROM table WHERE month = {op_month}"
+
+# 显示分析任务的处理后SQL
+python src/ppt_generator.py -t file/model.pptx -m 202507 --sql-id 5
+```
 ## 功能特点
 
 ### 核心功能
@@ -31,8 +109,7 @@
 ### 依赖库
 ```bash
 # 基础依赖
-pip install -r requirements.txt
-
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 # KPI功能额外依赖
 pip install -r requirements_kpi.txt
 ```
@@ -425,75 +502,6 @@ processor.save_presentation("output.pptx")
 5. **任务过滤**: 支持指定单个或多个分析任务
 6. **月份参数处理**: 自动处理月份变量替换
 
-### 使用方法
-
-#### 1. PPT生成模式
-```bash
-# 激活虚拟环境
-conda activate envs/pptup_env
-# 生成完整PPT报告（默认全球通分析）
-python src/ppt_generator.py -t file/model.pptx -o file/ppt_report_202507.pptx -m 202507
-
-# 指定特定分析任务
-python src/ppt_generator.py -t file/model.pptx -o file/ppt_report_202507.pptx -m 202507 --sql-id 5
-
-# 使用中高端分析配置
-python src/ppt_generator.py -t file/zgd/zgd_model.pptx -o file/zgd/ppt_zgd_report_202508.pptx -m 202508 -a 2 --sql-id 1
-# 使用全球通分析配置
-python src/ppt_generator.py -t file/qqt/qqt_model.pptx -o file/qqt/ppt_qqt_report_202508.pptx -m 202508 -a 1 
-# 指定多个任务
-python src/ppt_generator.py -t file/zgd/zgd_model.pptx -o file/ppt_report_202507_add.pptx -m 202507 --sql-id 1 13 18 19 -a 2
-```
-
-#### 示例1：基本KPI替换
-```bash
-
-# 基本KPI替换（202507月份数据）
-python src/kpi_ppt_command.py -t file/model.pptx -m 202507
-
-# 输出：file/model_kpi_updated_20241229_123456.pptx
-```
-
-#### 示例2：详细模式KPI替换
-```bash
-# 详细模式，查看完整处理过程 -a 2 中高端分析
-python src/kpi_ppt_command.py -t file/zgd/ppt_zgd_report_202508.pptx -m 202508 -v -a 2 --sql-id 1 2 3
-# 详细模式，查看完整处理过程 -a 1 全球通分析
-python src/kpi_ppt_command.py -t file/qqt/ppt_qqt_report_202508.pptx -m 202508 -v -a 1 --sql-id 1 2 3
-
-# 显示数据库查询、SQL执行、数据替换等详细信息
-
-# 使用中高端分析配置处理所有KPI
-python src/kpi_ppt_command.py -t file/zgd/ppt_report_202507.pptx -m 202507 -a 2
-
-# 使用全球通分析配置
-python src/kpi_ppt_command.py -t file/qqt/ppt_report_202507.pptx -m 202507 -a 1
-
-# 指定特定的SQL ID
-python src/kpi_ppt_command.py -t file/zgd/ppt_report_202507.pptx -m 202507 -a 2 --sql-id 1 2 3
-```
-
-
-#### 2. SQL执行模式
-```bash
-# 处理分析任务的SQL并执行
-python src/ppt_generator.py -t file/model.pptx -m 202507 --sql-id 5 --execute
-
-# 处理自定义SQL模板并执行
-python src/ppt_generator.py -t file/model.pptx -m 202507 -s "SELECT * FROM table WHERE month = {op_month}" --execute
-
-# 从文件读取SQL模板并执行
-python src/ppt_generator.py -t file/model.pptx -m 202507 -f sql_template.sql --execute
-```
-
-#### 3. SQL预览模式
-```bash
-# 只显示处理后的SQL，不执行
-python src/ppt_generator.py -t file/model.pptx -m 202507 -s "SELECT * FROM table WHERE month = {op_month}"
-
-# 显示分析任务的处理后SQL
-python src/ppt_generator.py -t file/model.pptx -m 202507 --sql-id 5
-```
 
 ### 参数说明
 

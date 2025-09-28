@@ -3,7 +3,7 @@
 import pymysql
 import pandas as pd
 from typing import List, Dict, Any, Optional
-from config import DB_CONFIG, SQL_TIMEOUT, MAX_DATA_ROWS
+from config import DB_CONFIG, SQL_TIMEOUT
 
 
 class DatabaseManager:
@@ -60,15 +60,12 @@ class DatabaseManager:
     def execute_analysis_sql(self, sql: str) -> Optional[pd.DataFrame]:
         """执行分析SQL并返回结果"""
         try:
-            # 添加行数限制
+            # 安全检查：只允许SELECT查询
             if not sql.upper().strip().startswith('SELECT'):
                 raise ValueError("只允许执行SELECT查询")
             
-            # 添加LIMIT限制（如果没有的话）
-            if 'LIMIT' not in sql.upper():
-                # 移除末尾的分号和空白字符，然后添加LIMIT
-                sql = sql.rstrip().rstrip(';').rstrip()
-                sql = f"{sql} LIMIT {MAX_DATA_ROWS}"
+            # 清理SQL语句：移除末尾的分号和多余空白字符
+            sql = sql.rstrip().rstrip(';').rstrip()
             
             # 执行查询（使用警告抑制）
             import warnings

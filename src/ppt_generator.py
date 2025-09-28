@@ -14,7 +14,7 @@ import pymysql
 
 from month_processor import MonthProcessor
 from database import DatabaseManager
-from analysis_data_text_order import analysis_data_text
+from ai_analyzer import AIAnalyzer
 from config import MODEL_CONFIG
 from ppt_processor import PPTProcessor
 from config import DB_CONFIG
@@ -35,6 +35,7 @@ class PPTReportGenerator:
     def __init__(self):
         self.db_manager = DatabaseManager()
         self.month_processor = MonthProcessor()
+        self.ai_analyzer = AIAnalyzer()  # 使用新的AI分析器（包含验证功能）
         self.replacement_data = {}
         
     def generate_report(self, template_file: str, output_file: str, month_str: str, sql_ids: list = None, analysis_id: int = 1, execute_sql: bool = False):
@@ -113,11 +114,8 @@ class PPTReportGenerator:
                     # 格式化数据用于AI分析
                     formatted_data = self.db_manager.format_data_for_analysis(data)
                     
-                    # 调用AI分析
+                    # 调用AI分析（使用新的分析器，包含验证功能）
                     logger.info(f"🤖 AI分析中...")
-                    api_key = MODEL_CONFIG.get('api_key', 'sk-XIval4xD5HWrvG7956C534B6Cd7348C2B22dFc22B1Ca308e')
-                    conversation_uid = f"ppt_report_{task_id}_{int(time.time())}"
-                    user_input = f"请分析{task_name}数据，月份：{op_month}"
                     
                     # 调试：打印输入数据和排序结果
                     logger.info(f"📊 调试信息 - 任务ID: {task_id}")
@@ -136,7 +134,15 @@ class PPTReportGenerator:
                     logger.info(f"{sort_results}")
                     logger.info("=" * 60)
                     
-                    analysis_result = analysis_data_text(api_key, user_input, conversation_uid, formatted_data)
+                    # 构建任务信息
+                    task_info = {
+                        'anaylsis_sql_id': task_id,
+                        'anaylsis_name': task_name,
+                        'op_month': op_month
+                    }
+                    
+                    # 使用新的AI分析器（自动包含验证和修正功能）
+                    analysis_result = self.ai_analyzer.analyze_data(task_info, formatted_data)
                     
                     # 清理分析结果
                     cleaned_result = self._clean_analysis_result(analysis_result)

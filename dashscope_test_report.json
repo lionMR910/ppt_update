@@ -1,0 +1,57 @@
+{
+  "test_time": "2025-09-21T15:41:35.421542",
+  "summary": {
+    "total": 7,
+    "successful": 7,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "details": [
+    {
+      "test": "基本对话功能",
+      "status": "成功",
+      "response_time": 2.796069860458374,
+      "model": "qwen-plus",
+      "content_length": 122
+    },
+    {
+      "test": "中文处理能力",
+      "status": "成功",
+      "response_time": 14.36450481414795,
+      "content_length": 349
+    },
+    {
+      "test": "数据分析任务",
+      "status": "成功",
+      "response_time": 24.47354245185852,
+      "content_length": 1001
+    },
+    {
+      "test": "多轮对话",
+      "status": "成功",
+      "response_time": 13.124560594558716,
+      "content_length": 580
+    },
+    {
+      "test": "模型_qwen-plus",
+      "status": "成功",
+      "response_time": 1.1657352447509766,
+      "model": "qwen-plus",
+      "content_length": 52
+    },
+    {
+      "test": "模型_qwen-turbo",
+      "status": "成功",
+      "response_time": 0.4290344715118408,
+      "model": "qwen-turbo",
+      "content_length": 34
+    },
+    {
+      "test": "模型_qwen-max",
+      "status": "成功",
+      "response_time": 1.251798152923584,
+      "model": "qwen-max",
+      "content_length": 41
+    }
+  ]
+}
