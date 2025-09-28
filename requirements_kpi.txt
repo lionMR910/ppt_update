@@ -1,0 +1,9 @@
+# KPI 替换功能的额外依赖
+# 基于现有 requirements.txt 的扩展
+
+# 数据库支持
+pymysql>=1.0.0
+sqlite3
+
+# 已有依赖（确保版本兼容）
+python-pptx>=0.6.21
